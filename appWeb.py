@@ -6,7 +6,9 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     return render_template('index.html')
-
+@app.route("/")
+def hello_world():
+    return "<p>Hello, World!</p>"
 @app.route('/graph')
 def graph():
     return render_template('grafico.html')
@@ -14,6 +16,14 @@ def graph():
 @app.route('/model')
 def model():
     return render_template('model.html')
+
+@app.route('/topUsers')
+def users():
+    return
+
+@app.route('/topWebs')
+def web():
+    return
 
 @app.route('/ej2')
 def ej2():
@@ -36,3 +46,6 @@ def ej3():
 
  if __name__ == '__main__':
     app.run(debug = True)
+
+
+
