@@ -27,25 +27,23 @@ def web():
 
 @app.route('/ej2')
 def ej2():
-    usuarios_df, emails_df, legal_df = ejercicio2.obtener_datos()
+    usuarios_df, emails_df, legal_df, admin_phishing_df = ejercicio2.obtener_datos()
 
     n_muestras = ejercicio2.num_muestras(usuarios_df)
     media_fechas, desviacion_fechas = ejercicio2.mean_std_fechas(usuarios_df)
     media_ips, desviacion_ips = ejercicio2.mean_std_ips(usuarios_df)
-    media, desviacion_estandar = ejercicio2.mean_std_emails()
-    minimo, maximo = ejercicio2.minMax_emails()
-    minimo_admin, maximo_admin = ejercicio2.minMax_phish_admin()
+    media, desviacion_estandar = ejercicio2.mean_std_phishing(emails_df)
+    minimo, maximo = ejercicio2.min_max_emails(emails_df)
+    minimo_admin, maximo_admin = ejercicio2.min_max_phishing_admin(admin_phishing_df)
     return render_template('ej2.html', num_muestras=n_muestras, media_fechas=media_fechas,
                            desviacion_fechas=desviacion_fechas, media_ips=media_ips, desviacion_ips=desviacion_ips,
                            media=media, desviacion_estandar=desviacion_estandar, minimo=minimo, maximo=maximo,
                            minimo_admin=minimo_admin, maximo_admin=maximo_admin)
 
-@app.route('ej3')
+@app.route('/ej3')
 def ej3():
+    return render_template('ej3.html')
 
 
- if __name__ == '__main__':
+if __name__ == '__main__':
     app.run(debug = True)
-
-
-
