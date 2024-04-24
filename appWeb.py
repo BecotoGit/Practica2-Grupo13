@@ -1,6 +1,7 @@
 from flask import Flask, render_template
 
 import ejercicio2
+from ejercicio3 import prepareDf
 
 app = Flask(__name__)
 @app.route('/')
@@ -42,7 +43,21 @@ def ej2():
 
 @app.route('/ej3')
 def ej3():
-    return render_template('ej3.html')
+    df = prepareDf()
+
+    data = {"grupo": list(), "num_muestras": list(), "missing": list(), "median": list(), "mean": list(),
+            "var": list(), "min": list(), "max": list()}
+    for grupo, data_group in df.groupby(['permisos', 'contrasenaDebil']):
+        data['grupo'].append(grupo)
+        data['num_muestras'].append(len(data_group['phishing']))
+        data['missing'].append((data_group['phishing'] == 0).sum())
+        data['median'].append(data_group['phishing'].median())
+        data['mean'].append(data_group['phishing'].mean())
+        data['var'].append(data_group['phishing'].var())
+        data['min'].append(data_group['phishing'].min())
+        data['max'].append(data_group['phishing'].max())
+
+    return render_template('prueba.html', data=data)
 
 
 if __name__ == '__main__':

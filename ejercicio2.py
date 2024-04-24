@@ -69,29 +69,28 @@ def min_max_phishing_admin(df_admin):
     max_phishing_admin = df_admin['phishing'].max()
     return min_phishing_admin, max_phishing_admin
 
+def printInfo():
+    usuarios_df, emails_df, legal_df, admin_phishing_df = obtener_datos()
+    n_muestras = num_muestras(usuarios_df)
+    print("Numero de muestras (valores distintos de missing): ", n_muestras)
+    media_fechas, desviacion_fechas = mean_std_fechas(usuarios_df)
+    print("Media del total de fechas en las que se ha cambiado la contraseña: ", media_fechas)
+    print("Desviación estándar del total de fechas en las que se ha cambiado la contraseña: ", desviacion_fechas)
 
-usuarios_df, emails_df, legal_df, admin_phishing_df = obtener_datos()
+    media_ips, desviacion_ips = mean_std_ips(usuarios_df)
+    print("Media estándar del total de IPs que se han detectado: ", media_ips)
+    print("Desviación estándar del total de IPs que se han detectado: ", desviacion_ips)
 
+    media_phishing, desviacion_phishing = mean_std_phishing(emails_df)
+    print("Media total del número de email recibidos de phishing en los que ha interactuado cualquier usuario: ", media_phishing)
+    print("Desviación estándar del número de email recibidos de phishing en los que ha interactuado cualquier usuario: ", desviacion_phishing)
 
-n_muestras = num_muestras(usuarios_df)
-print("Numero de muestras (valores distintos de missing): ", n_muestras)
+    min_emails, max_emails = min_max_emails(emails_df)
+    print("Valor máximo del total de emails recibidos: ", max_emails)
+    print("Valor mínimo del total de emails recibidos: ", min_emails)
 
-media_fechas, desviacion_fechas = mean_std_fechas(usuarios_df)
-print("Media del total de fechas en las que se ha cambiado la contraseña: ", media_fechas)
-print("Desviación estándar del total de fechas en las que se ha cambiado la contraseña: ", desviacion_fechas)
+    min_phishing_admin, max_phishing_admin = min_max_phishing_admin(admin_phishing_df)
+    print("Valor mínimo del número de emails de phishing en los que ha interactuado un administrador: ", min_phishing_admin)
+    print("Valor máximo del número de emails de phishing en los que ha interactuado un administrador: ", max_phishing_admin)
 
-media_ips, desviacion_ips = mean_std_ips(usuarios_df)
-print("Media estándar del total de IPs que se han detectado: ", media_ips)
-print("Desviación estándar del total de IPs que se han detectado: ", desviacion_ips)
-
-media_phishing, desviacion_phishing = mean_std_phishing(emails_df)
-print("Media total del número de email recibidos de phishing en los que ha interactuado cualquier usuario: ", media_phishing)
-print("Desviación estándar del número de email recibidos de phishing en los que ha interactuado cualquier usuario: ", desviacion_phishing)
-
-min_emails, max_emails = min_max_emails(emails_df)
-print("Valor máximo del total de emails recibidos: ", max_emails)
-print("Valor mínimo del total de emails recibidos: ", min_emails)
-
-min_phishing_admin, max_phishing_admin = min_max_phishing_admin(admin_phishing_df)
-print("Valor mínimo del número de emails de phishing en los que ha interactuado un administrador: ", min_phishing_admin)
-print("Valor máximo del número de emails de phishing en los que ha interactuado un administrador: ", max_phishing_admin)
+#printInfo()

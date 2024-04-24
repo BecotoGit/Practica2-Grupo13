@@ -8,17 +8,25 @@
     <link rel="stylesheet" type="text/css" href="/styles/basic.css">
 </head>
 <body>
-
     <h1>Ejercicio 3: Datos agrupados</h1>
-    <p>Grupo: {{grupo}}</p>
-    <p>N&uacutemero de observacines: {{n_observaciones}}</p>
-    <p>Número de valores ausentes (missing): {{num_missing}}</p>
-    <p>Mediana: {{mediana}}</p>
-    <p>Media: {{media}}</p>
-    <p>Varianza: {{var}}</p>
-    <p>Valor m&aacuteximo: {{maxi}}</p>
-    <p>Valor m&iacutenimo: {{mini}}</p>
-    <br>
+
+        {% for grupo in data.grupo %}
+            <h3>
+                {% if grupo[0] == '0' %}
+                    Usuario, Contraseña {{grupo[1]}}
+                {%else%}
+                    Admin, Contraseña {{grupo[1]}}
+                {% endif %}
+            </h3>
+            <p>N&uacute;mero de muestras: {{data.num_muestras[loop.index - 1]}}</p>
+            <p>N&uacute;mero de valores ausentes (missing): {{ data.missing[loop.index - 1] }}</p>
+            <p>Mediana: {{ data.median[loop.index - 1] }}</p>
+            <p>Media: {{ data.mean[loop.index - 1] }}</p>
+            <p>Varianza: {{ data.var[loop.index - 1] }}</p>
+            <p>Valor m&iacute;nimo: {{ data.min[loop.index - 1] }}</p>
+            <p>Valor m&aacute;ximo: {{ data.max[loop.index - 1] }}</p>
+        {% endfor %}
+
     <a href="/">Volver al inicio</a>
 </body>
 </html>
