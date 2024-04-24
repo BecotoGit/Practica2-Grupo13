@@ -35,7 +35,8 @@ cur.execute("CREATE TABLE IF NOT EXISTS usuarios("
             "provincia TEXT,"
             "permisos TEXT,"
             "fechas TEXT,"
-            "ips TEXT"
+            "ips TEXT,"
+            "critico INTEGER"
             ");")
 
 
@@ -59,9 +60,9 @@ con.commit()
 
 for elem in dataUsers["usuarios"]:
     clave = list(elem.keys())[0]
-    cur.execute("INSERT OR IGNORE INTO usuarios(nombre, telefono, contrasena, provincia, permisos, fechas, ips) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    cur.execute("INSERT OR IGNORE INTO usuarios(nombre, telefono, contrasena, provincia, permisos, fechas, ips, critico) VALUES (?, ?, ?, ?, ?, ?, ?,?)",
         (clave, elem[clave]['telefono'], elem[clave]['contrasena'], elem[clave]['provincia'], elem[clave]['permisos'],
-            ','.join(elem[clave]['fechas']), ','.join(elem[clave]['ips'])))
+            ','.join(elem[clave]['fechas']), ','.join(elem[clave]['ips']), elem[clave]['critico']))
 
     cur.execute("INSERT INTO emails (usuario, total, phishing, cliclados) VALUES (?, ?, ?, ?)",
         (clave, elem[clave]['emails']['total'], elem[clave]['emails']['phishing'], elem[clave]['emails']['cliclados']))
