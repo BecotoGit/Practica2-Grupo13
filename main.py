@@ -25,18 +25,32 @@ fLegal.close()
 con = sqlite3.connect('datos.db')
 cur = con.cursor()
 cur.execute("DROP TABLE IF EXISTS usuarios")
+cur.execute("DROP TABLE IF EXISTS fechas_usuarios")
+cur.execute("DROP TABLE IF EXISTS ips_usuarios")
 cur.execute("DROP TABLE IF EXISTS emails")
 cur.execute("DROP TABLE IF EXISTS legal")
 
 cur.execute("CREATE TABLE IF NOT EXISTS usuarios("
-            "nombre TEXT PRIMARY KEY,"
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "nombre TEXT,"
             "telefono INTEGER,"
             "contrasena TEXT,"
             "provincia TEXT,"
-            "permisos TEXT,"
-            "fechas TEXT,"
-            "ips TEXT,"
-            "critico INTEGER"
+            "permisos TEXT"
+            ");")
+
+cur.execute("CREATE TABLE IF NOT EXISTS fechas_usuarios("
+            "id INTEGER PRIMARY KEY,"
+            "usuario_id INTEGER,"
+            "fecha TEXT,"
+            "FOREIGN KEY(usuario_id) REFERENCES usuarios(id)"
+            ");")
+
+cur.execute("CREATE TABLE IF NOT EXISTS ips_usuarios("
+            "id INTEGER PRIMARY KEY,"
+            "usuario_id INTEGER,"
+            "ip TEXT,"
+            "FOREIGN KEY (usuario_id) REFERENCES usuario(id)"
             ");")
 
 
@@ -60,12 +74,19 @@ con.commit()
 
 for elem in dataUsers["usuarios"]:
     clave = list(elem.keys())[0]
-    cur.execute("INSERT OR IGNORE INTO usuarios(nombre, telefono, contrasena, provincia, permisos, fechas, ips, critico) VALUES (?, ?, ?, ?, ?, ?, ?,?)",
-        (clave, elem[clave]['telefono'], elem[clave]['contrasena'], elem[clave]['provincia'], elem[clave]['permisos'],
-            ','.join(elem[clave]['fechas']), ','.join(elem[clave]['ips']), elem[clave]['critico']))
+    usuario_data = elem[clave]
+
+    cur.execute("INSERT OR IGNORE INTO usuarios(nombre, telefono, contrasena, provincia, permisos) VALUES (?, ?, ?, ?, ?)",
+        (clave, usuario_data['telefono'], usuario_data['contrasena'], usuario_data['provincia'], usuario_data['permisos']))
 
     cur.execute("INSERT INTO emails (usuario, total, phishing, cliclados) VALUES (?, ?, ?, ?)",
-        (clave, elem[clave]['emails']['total'], elem[clave]['emails']['phishing'], elem[clave]['emails']['cliclados']))
+        (clave, usuario_data['emails']['total'], usuario_data['emails']['phishing'], usuario_data['emails']['cliclados']))
+
+    for fecha in usuario_data['fechas']:
+        cur.execute("INSERT OR IGNORE  INTO fechas_usuarios (usuario_id, fecha) VALUES ((SELECT id FROM usuarios WHERE nombre = ?),?)", (clave, fecha))
+
+    for ip in usuario_data['ips']:
+        cur.execute("INSERT OR IGNORE INTO ips_usuarios (usuario_id, ip) VALUES ((SELECT id FROM usuarios WHERE nombre = ?),?)", (clave, ip))
 
 con.commit()
 
