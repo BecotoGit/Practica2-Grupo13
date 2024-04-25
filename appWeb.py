@@ -1,15 +1,19 @@
-from flask import Flask, render_template
+import sqlite3
+
+from flask import Flask, render_template, jsonify, request
 
 import ejercicio2
 from ejercicio3 import prepareDf
 
 app = Flask(__name__)
+def connect_db():
+    return sqlite3.connect('datos.db')
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
-@app.route("/")
-def hello_world():
-    return "<p>Hello, World!</p>"
+
 @app.route('/graph')
 def graph():
     return render_template('grafico.html')
@@ -25,7 +29,6 @@ def users():
 @app.route('/topWebs')
 def web():
     return
-
 @app.route('/ej2')
 def ej2():
     usuarios_df, emails_df, legal_df, admin_phishing_df = ejercicio2.obtener_datos()
@@ -58,6 +61,26 @@ def ej3():
         data['max'].append(data_group['phishing'].max())
 
     return render_template('prueba.html', data=data)
+
+@app.route('/top_usuarios_criticos')
+def top_usuarios_criticos():
+    x = request.args.get('x', default=10, type=int)
+    con = connect_db()
+    cur = con.cursor()
+    cur.execute("SELECT nombre, telefono FROM usuarios WHERE critico = 1 ORDER BY telefono DESC LIMIT ?", (x,))
+    usuarios_criticos = cur.fetchall()
+    con.close()
+    return render_template('usuarios_criticos.html', usuarios_criticos=usuarios_criticos)
+
+@app.route('/top_paginas_desactualizadas')
+def top_paginas_desactualizadas():
+    x = request.args.get('xWeb', default=10, type=int)
+    con = connect_db()
+    cur = con.cursor()
+    cur.execute("SELECT web FROM legal WHERE cookies > 0 OR aviso > 0 OR proteccion_de_datos > 0 ORDER BY (cookies + aviso + proteccion_de_datos), creacion LIMIT ?", (x,))
+    paginas_desactualizadas = cur.fetchall()
+    con.close()
+    return render_template('paginas_desactualizadas.html', paginas_desactualizadas=paginas_desactualizadas)
 
 
 if __name__ == '__main__':

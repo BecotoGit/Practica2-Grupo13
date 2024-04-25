@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios Críticos</title>
+</head>
+<body>
+    <h1>Usuarios Críticos</h1>
+    <ul>
+        {% for usuario in usuarios_criticos %}
+        <li>{{ usuario[0] }} - {{ usuario[1] }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

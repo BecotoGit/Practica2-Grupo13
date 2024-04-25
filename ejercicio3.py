@@ -31,7 +31,7 @@ def obtener_datos():
     con = sqlite3.connect('datos.db')
     query = '''
         SELECT u.nombre, u.telefono, u.contrasena, u.provincia, 
-               u.permisos, u.fechas, u.ips, 
+               u.permisos, 
                e.phishing AS phishing
         FROM usuarios AS u
         LEFT JOIN emails AS e ON u.nombre = e.usuario
