@@ -67,7 +67,7 @@ def top_usuarios_criticos():
     x = request.args.get('x', default=10, type=int)
     con = connect_db()
     cur = con.cursor()
-    cur.execute("SELECT nombre, telefono FROM usuarios WHERE critico = 1 ORDER BY telefono DESC LIMIT ?", (x,))
+    cur.execute("SELECT nombre FROM usuarios WHERE critico = 1 ORDER BY id ASC LIMIT ?", (x,))
     usuarios_criticos = cur.fetchall()
     con.close()
     return render_template('usuarios_criticos.html', usuarios_criticos=usuarios_criticos)
