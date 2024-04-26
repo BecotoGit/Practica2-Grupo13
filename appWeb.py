@@ -1,5 +1,5 @@
 import sqlite3
-
+import requests
 from flask import Flask, render_template, jsonify, request
 
 import ejercicio2
@@ -114,6 +114,15 @@ def top_paginas_desactualizadas():
     con.close()
     return render_template('paginas_desactualizadas.html', paginas_desactualizadas=paginas_desactualizadas)
 
+
+@app.route('/ultimas_vulns')
+def ultimas_vulns():
+    response = requests.get('https://cve.circl.lu/api/last/10')
+    if response.status_code == 200:
+        cves = response.json()
+        return render_template('ultimas_vulns.html', cves=cves)
+    else:
+        return 'Error al obtener los datos de CVE'
 
 if __name__ == '__main__':
     app.run(debug = True)

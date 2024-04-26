@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIS - &Uacute;ltimas Vulnerabilidades</title>
+</head>
+<body>
+    <h1>Reporte CVE</h1>
+        {% for cve in cves %}
+            <strong>CVE ID: </strong>{{cve.id}}<br><strong>Descripci&oacute;n: </strong>{{cve.summary}}
+            <br><br>
+        {% endfor %}
+</body>
+</html>
