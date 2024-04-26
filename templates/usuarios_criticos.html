@@ -9,7 +9,7 @@
     <h1>Usuarios Críticos</h1>
     <ul>
         {% for usuario in usuarios_criticos %}
-        <li>{{ usuario[0] }}</li>
+        <li>Nombre: {{ usuario[0] }}-Teléfono: {{usuario[1]}}-Provincia: {{usuario[2]}}</li>
         {% endfor %}
     </ul>
 </body>

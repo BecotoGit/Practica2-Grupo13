@@ -1,6 +1,6 @@
 import sqlite3
 import requests
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, request
 
 import ejercicio2
 from ejercicio3 import prepareDf
@@ -65,48 +65,53 @@ def ej3():
 
 @app.route('/top_usuarios_criticos')
 def top_usuarios_criticos():
-    x = request.args.get('x', default=10, type=int)  # Obtener el valor de X de la consulta, valor predeterminado: 10
+    x = request.args.get('x', default=5, type=int)  # Obtener el valor de X de la consulta, valor predeterminado: 10
     spam_percentage = request.args.get('spam_percentage', default='any')  # Obtener el valor de spam_percentage
     con = connect_db()
     cur = con.cursor()
 
+    # Si se especifica el porcentaje de spam, ajustar la consulta
     if spam_percentage == 'more_than_50':
-        # Consulta para usuarios críticos que han pulsado más del 50% de veces al correo de spam
         cur.execute("""
-                SELECT u.nombre, u.telefono 
-                FROM usuarios u
-                JOIN emails e ON u.nombre = e.usuario
-                WHERE u.critico = 1 
-                GROUP BY u.nombre
-                HAVING SUM(e.phishing) > 0.5 * COUNT(e.usuario)
-                ORDER BY u.telefono DESC LIMIT ?
-                """, (x,))
+                   SELECT u.nombre, u.telefono, u.provincia
+                   FROM usuarios u
+                   JOIN (
+                       SELECT usuario, 
+                              phishing AS total_phishing,
+                              cliclados AS total_cliclados
+                       FROM emails
+                       GROUP BY usuario
+                   ) e ON u.nombre = e.usuario
+                   WHERE critico = 1
+                   AND (CAST(e.total_cliclados AS REAL) / e.total_phishing) > 0.5
+                   ORDER BY u.nombre ASC LIMIT ?
+                   """, (x,))
     elif spam_percentage == 'less_than_50':
-        # Consulta para usuarios críticos que han pulsado menos del 50% de veces al correo de spam
-        cur.execute("""
-                SELECT u.nombre, u.telefono 
-                FROM usuarios u
-                JOIN emails e ON u.nombre = e.usuario
-                WHERE u.critico = 1 
-                GROUP BY u.nombre
-                HAVING SUM(e.phishing) <= 0.5 * COUNT(e.usuario)
-                ORDER BY u.telefono DESC LIMIT ?
-                """, (x,))
+        cur.execute("""SELECT u.nombre, u.telefono, u.provincia
+                   FROM usuarios u
+                   JOIN (
+                       SELECT usuario,
+                              phishing AS total_phishing,
+                              cliclados AS total_cliclados
+                       FROM emails
+                       GROUP BY usuario
+                   ) e ON u.nombre = e.usuario
+                   WHERE critico = 1
+                   AND (CAST(e.total_cliclados AS REAL) / e.total_phishing) <= 0.5
+                   ORDER BY u.nombre ASC LIMIT ?""", (x,))
     else:
-        # Consulta para todos los usuarios críticos
         cur.execute("""
-                SELECT nombre, telefono 
+                SELECT nombre, telefono, provincia
                 FROM usuarios 
                 WHERE critico = 1
-                ORDER BY telefono DESC LIMIT ?
+                ORDER BY nombre ASC LIMIT ?
                 """, (x,))
-
     usuarios_criticos = cur.fetchall()
     con.close()
     return render_template('usuarios_criticos.html', usuarios_criticos=usuarios_criticos)
 @app.route('/top_paginas_desactualizadas')
 def top_paginas_desactualizadas():
-    x = request.args.get('xWeb', default=10, type=int)
+    x = request.args.get('xWeb', default=5, type=int)
     con = connect_db()
     cur = con.cursor()
     cur.execute("SELECT web FROM legal WHERE cookies > 0 OR aviso > 0 OR proteccion_de_datos > 0 ORDER BY (cookies + aviso + proteccion_de_datos), creacion LIMIT ?", (x,))
