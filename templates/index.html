@@ -29,15 +29,22 @@
         <li><a href="/cumplimiento_politicas_por_anio">Mostrar el cumplimiento de políticas de privacidad por año de creación</a></li>
     </ul>-->
     <h2>Usuarios críticos</h2>
-    <form action="/top_usuarios_criticos" method="get">
-        <label for="x_value">Mostrar top de usuarios críticos (especifica X):</label>
-        <input type="number" id="x_value" name="x" min="1" max="100">
-        <button type="submit">Mostrar</button>
+    <form action="/top_usuarios_criticos" method="GET">
+        <label for="x">Top X de usuarios críticos:</label>
+        <input type="number" id="x" name="x" value="10" min="1" max="100">
+        <p>Mostrar información de usuarios que:</p>
+        <input type="radio" id="any" name="spam_percentage" value="any" checked>
+        <label for="any">Cualquier porcentaje de spam</label><br>
+        <input type="radio" id="more_than_50" name="spam_percentage" value="more_than_50">
+        <label for="more_than_50">Han pulsado más del 50% de veces al spam</label><br>
+        <input type="radio" id="less_than_50" name="spam_percentage" value="less_than_50">
+        <label for="less_than_50">Han pulsado menos del 50% de veces al spam</label><br><br>
+        <input type="submit" value="Mostrar">
     </form>
 
     <h2>Páginas web críticas</h2>
     <form action="/top_paginas_desactualizadas" method="get">
-        <label for="x_value">Mostrar top de páginas web desactualizadas (especifica X):</label>
+        <label for="x_valueWeb">Mostrar top de páginas web desactualizadas (especifica X):</label>
         <input type="number" id="x_valueWeb" name="xWeb" min="1" max="100">
         <button type="submit">Mostrar</button>
     </form>
