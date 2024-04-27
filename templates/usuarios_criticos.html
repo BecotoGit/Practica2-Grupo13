@@ -7,10 +7,23 @@
 </head>
 <body>
     <h1>Usuarios Críticos</h1>
-    <ul>
-        {% for usuario in usuarios_criticos %}
-        <li>Nombre: {{ usuario[0] }}-Teléfono: {{usuario[1]}}-Provincia: {{usuario[2]}}</li>
-        {% endfor %}
-    </ul>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Teléfono</th>
+                <th>Provincia</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usuario in usuarios_criticos %}
+            <tr>
+                <td>{{usuario[0]}}</td>
+                <td>{{usuario[1]}}</td>
+                <td>{{usuario[2]}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </body>
 </html>

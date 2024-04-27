@@ -41,17 +41,30 @@
         <label for="less_than_50">Han pulsado menos del 50% de veces al spam</label><br><br>
         <input type="submit" value="Mostrar">
     </form>
+    <form action="/top_usuarios_criticos_pdf" method="GET">
+    <input type="hidden" id="x_pdf" name="x" value="">
+    <input type="hidden" id="spam_percentage_pdf" name="spam_percentage" value="">
+    <button type="submit" onclick="document.getElementById('x_pdf').value = document.getElementById('x').value; document.getElementById('spam_percentage_pdf').value = document.querySelector('input[name=spam_percentage]:checked').value;">Descargar PDF</button>
+</form>
 
     <h2>Páginas web críticas</h2>
     <form action="/top_paginas_desactualizadas" method="get">
         <label for="x_valueWeb">Mostrar top de páginas web desactualizadas (especifica X):</label>
         <input type="number" id="x_valueWeb" name="xWeb" min="1" max="100">
+        <br>
         <button type="submit">Mostrar</button>
     </form>
+    <form action="/top_paginas_desactualizadas_pdf" method="get">
+    <input type="hidden" id="x_valueWeb_pdf" name="xWeb" value="">
+    <button type="submit" onclick="document.getElementById('x_valueWeb_pdf').value = document.getElementById('x_valueWeb').value;">Descargar PDF</button>
+</form>
 
     <h2>&Uacute;ltimas Vulnerabilidades reportadas</h2>
     <ul>
         <li><a href="/ultimas_vulns">Reporte CVE</a></li>
     </ul>
+    <form action="/ultimas_vulns_pdf" method="get">
+        <button type="submit">Descargar PDF</button>
+    </form>
 </body>
 </html>
