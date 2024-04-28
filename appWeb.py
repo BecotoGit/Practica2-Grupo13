@@ -7,6 +7,9 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
+from DecisionTreeClassifier import perform_decision_tree, visualize_decision_tree
+from LinearRegression import perform_linear_regression
+from RandomForest import perform_random_forest
 
 
 import ejercicio2
@@ -23,6 +26,7 @@ def connect_db():
 def index():
     return render_template('index.html')
 
+<<<<<<< Updated upstream
 @app.route('/graph')
 def graph():
     return render_template('grafico.html')
@@ -70,16 +74,59 @@ def ej3():
         data['max'].append(data_group['phishing'].max())
 
     return render_template('prueba.html', data=data)
+=======
+@app.route('/analizar_usuario', methods=['GET', 'POST'])
+def analizar_usuario():
+    name = request.form['name']
+    phone = request.form['phone']
+    province = request.form['province']
+    permissions = request.form['permissions']
+    total_sent_emails = request.form['total_sent_emails']
+    total_phishing_emails = request.form['total_phishing_emails']
+    total_clicked_emails = request.form['total_clicked_emails']
+    method = request.form['method']
+
+    user_data = (name, phone, province, permissions, total_sent_emails, total_phishing_emails, total_clicked_emails)
+
+    usuario = {'nombre': name, 'telefono': phone, 'provincia': province, 'permisos': permissions, 'total_enviados': total_sent_emails, 'total_phishing': total_phishing_emails, 'total_clickeados': total_clicked_emails}
+
+    prediction = predict_user_criticity(user_data, method)
+
+    return render_template('resultado_analisis.html', usuario=usuario, prediction=prediction)
+
+
+def predict_user_criticity(user_data, method):
+    con = connect_db()
+    cur = con.cursor()
+
+    # Consultar los datos del usuario en la base de datos
+    cur.execute("""
+            SELECT nombre, telefono, provincia, permisos, total, phishing, cliclados
+            FROM usuarios
+            JOIN emails ON usuarios.nombre = emails.usuario
+            WHERE usuarios.nombre = ?
+        """, (user_data[0],))
+    user_data = cur.fetchone()
+
+    if method == 'Regresión Lineal':
+        prediction = perform_linear_regression()
+    elif method == 'Árbol de Decisión':
+        prediction = perform_decision_tree()
+    elif method == 'Bosque Aleatorio':
+        prediction = perform_random_forest()
+
+    con.close()
+>>>>>>> Stashed changes
+
 
 
 @app.route('/top_usuarios_criticos')
 def top_usuarios_criticos():
-    x = request.args.get('x', default=5, type=int)  # Obtener el valor de X de la consulta, valor predeterminado: 10
-    spam_percentage = request.args.get('spam_percentage', default='any')  # Obtener el valor de spam_percentage
+    x = request.args.get('x', default=5, type=int)
+    spam_percentage = request.args.get('spam_percentage', default='any')
     con = connect_db()
     cur = con.cursor()
 
-    # Si se especifica el porcentaje de spam, ajustar la consulta
     if spam_percentage == 'more_than_50':
         cur.execute("""
                    SELECT u.nombre, u.telefono, u.provincia
@@ -119,14 +166,14 @@ def top_usuarios_criticos():
     con.close()
     return render_template('usuarios_criticos.html', usuarios_criticos=usuarios_criticos)
 
+
 @app.route('/top_usuarios_criticos_pdf')
 def top_usuarios_criticos_pdf():
-    x = request.args.get('x', default=5, type=int)  # Obtener el valor de X de la consulta, valor predeterminado: 10
-    spam_percentage = request.args.get('spam_percentage', default='any')  # Obtener el valor de spam_percentage
+    x = request.args.get('x', default=5, type=int)  #
+    spam_percentage = request.args.get('spam_percentage', default='any')
     con = connect_db()
     cur = con.cursor()
 
-    # Si se especifica el porcentaje de spam, ajustar la consulta
     if spam_percentage == 'more_than_50':
         cur.execute("""
                     SELECT u.nombre, u.telefono, u.provincia
@@ -166,6 +213,8 @@ def top_usuarios_criticos_pdf():
     con.close()
     pdf_data = generate_pdf(usuarios_criticos)
     return send_pdf(pdf_data, 'usuarios_criticos.pdf')
+
+
 @app.route('/top_paginas_desactualizadas')
 def top_paginas_desactualizadas():
     x = request.args.get('xWeb', default=5, type=int)
@@ -189,6 +238,8 @@ def top_paginas_desactualizadas_pdf():
     con.close()
     pdf_data = generate_paginas_pdf(paginas_desactualizadas)
     return send_pdf(pdf_data, 'paginas_desactualizadas.pdf')
+
+
 def generate_pdf(data):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
@@ -217,6 +268,7 @@ def generate_pdf(data):
     buffer.close()
     return pdf_data
 
+
 def generate_paginas_pdf(data):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
@@ -235,11 +287,14 @@ def generate_paginas_pdf(data):
     pdf_data = buffer.getvalue()
     buffer.close()
     return pdf_data
+
+
 def send_pdf(pdf_data, filename):
     response = make_response(pdf_data)
     response.headers['Content-Disposition'] = f'attachment; filename={filename}'
     response.headers['Content-Type'] = 'application/pdf'
     return response
+
 
 @app.route('/ultimas_vulns')
 def ultimas_vulns():
@@ -249,6 +304,8 @@ def ultimas_vulns():
         return render_template('ultimas_vulns.html', cves=cves)
     else:
         return 'Error al obtener los datos de CVE'
+
+
 @app.route('/ultimas_vulns_pdf')
 def ultimas_vulns_pdf():
     response = requests.get('https://cve.circl.lu/api/last/10')
@@ -260,7 +317,10 @@ def ultimas_vulns_pdf():
         return 'Error al obtener los datos de CVE'
 
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 def generate_cves_pdf(cves):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
@@ -354,7 +414,6 @@ def conexiones_usuario_pdf():
     con.close()
     pdf_data = generate_conexiones_usuario_pdf(conexiones_usuario)
     return send_pdf(pdf_data, 'conexiones_usuario.pdf')
-
 
 
 if __name__ == '__main__':

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del Análisis</title>
+</head>
+<body>
+    <h1>Resultado del Análisis</h1>
+
+    <h2>Usuario Analizado:</h2>
+    <p><strong>Nombre:</strong> {{ usuario.nombre }}</p>
+    <p><strong>Teléfono:</strong> {{ usuario.telefono }}</p>
+    <p><strong>Provincia:</strong> {{ usuario.provincia }}</p>
+    <p><strong>Permisos:</strong> {{ usuario.permisos }}</p>
+    <p><strong>Total de Emails Enviados:</strong> {{ usuario.total }}</p>
+    <p><strong>Total de Emails con Phishing:</strong> {{ usuario.phishing }}</p>
+    <p><strong>Total de Emails Clicados:</strong> {{ usuario.cliclados }}</p>
+    <h2>Visualización del Bosque Aleatorio:</h2>
+    {% for i in range(n_trees) %}
+        <img src="{{ url_for('static', filename='tree_' + str(i) + '.png') }}" alt="Tree {{ i }}">
+    {% endfor %}
+    <h2>Resultado del Análisis:</h2>
+    {% if es_critico %}
+        <p>¡Este usuario es crítico!</p>
+    {% else %}
+        <p>Este usuario no es crítico.</p>
+    {% endif %}
+</body>
+</html>
