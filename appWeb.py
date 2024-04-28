@@ -13,7 +13,6 @@ import ejercicio2
 from ejercicio3 import prepareDf
 
 app = Flask(__name__)
-SHODAN_API_KEY = '3QekBMbgE4GUpOZnBTzsc3cQYNvK2smd'
 
 
 def connect_db():
