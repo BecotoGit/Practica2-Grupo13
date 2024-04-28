@@ -7,7 +7,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from io import BytesIO
 from joblib import load
 from joblib import dump
@@ -275,12 +275,13 @@ def ultimas_vulns_pdf():
         return 'Error al obtener los datos de CVE'
 
 
-
 def generate_cves_pdf(cves):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
     styles = getSampleStyleSheet()
     style_normal = styles['Normal']
+
+    style_description = ParagraphStyle(name='Description', parent=style_normal, fontSize=8)
 
     content = []
     content.append(Paragraph("Últimas Vulnerabilidades", styles['Title']))
@@ -290,7 +291,8 @@ def generate_cves_pdf(cves):
 
     table_data = [["ID", "Descripción"]]
     for cve in cves:
-        table_data.append([cve['id'], Paragraph(cve['summary'], style_normal)])
+        description = Paragraph(cve['summary'], style_description)
+        table_data.append([cve['id'], description])
 
     t = Table(table_data, colWidths=column_widths)
     t.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
