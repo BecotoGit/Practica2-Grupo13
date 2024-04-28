@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Métricas de Conexiones por Día de Usuario</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h2>Métricas de Conexiones por Día de Usuario</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Número de Conexiones</th>
+                <th>IDs de Usuarios</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for conexion in conexiones_usuario %}
+                <tr>
+                    <td>{{ conexion[0] }}</td>
+                    <td>{{ conexion[1] }}</td>
+                    <td>{{ conexion[2] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

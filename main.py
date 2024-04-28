@@ -1,35 +1,33 @@
-
 import sqlite3
-import pandas as pd
 import json
 
-
+# Función para leer archivos JSON
 def readJson(name):
-    # Devuelve el diccionario con los datos
     path = "datos/" + name
-    file = open(path, "r")
-    data = json.load(file)
-    file.close()
+    with open(path, "r") as file:
+        data = json.load(file)
     return data
 
+# Carga de datos desde los archivos JSON
+with open('datos/users_data_online.json','r') as fUsers:
+    dataUsers = json.load(fUsers)
 
-fUsers = open('datos/users_data_online.json','r')
-fLegal = open('datos/legal_data_online.json','r')
+with open('datos/legal_data_online.json','r') as fLegal:
+    dataLegal = json.load(fLegal)
 
-dataUsers = json.load(fUsers)            #readJson('user_data_online.json')
-dataLegal = json.load(fLegal)            #readJson('legal')
-
-fUsers.close()
-fLegal.close()
-
+# Conexión a la base de datos
 con = sqlite3.connect('datos.db')
 cur = con.cursor()
+
+# Eliminación de las tablas anteriores si existen
 cur.execute("DROP TABLE IF EXISTS usuarios")
 cur.execute("DROP TABLE IF EXISTS fechas_usuarios")
 cur.execute("DROP TABLE IF EXISTS ips_usuarios")
 cur.execute("DROP TABLE IF EXISTS emails")
 cur.execute("DROP TABLE IF EXISTS legal")
+cur.execute("DROP TABLE IF EXISTS conexiones_por_dia_usuario")
 
+# Creación de las nuevas tablas
 cur.execute("CREATE TABLE IF NOT EXISTS usuarios("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "nombre TEXT,"
@@ -51,9 +49,8 @@ cur.execute("CREATE TABLE IF NOT EXISTS ips_usuarios("
             "id INTEGER PRIMARY KEY,"
             "usuario_id INTEGER,"
             "ip TEXT,"
-            "FOREIGN KEY (usuario_id) REFERENCES usuario(id)"
+            "FOREIGN KEY (usuario_id) REFERENCES usuarios(id)"
             ");")
-
 
 cur.execute("CREATE TABLE IF NOT EXISTS emails("
             "usuario TEXT PRIMARY KEY,"
@@ -71,8 +68,17 @@ cur.execute("CREATE TABLE IF NOT EXISTS legal("
             "creacion INTEGER"
             ");")
 
+cur.execute("CREATE TABLE IF NOT EXISTS conexiones_por_dia_usuario("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "fecha TEXT,"
+            "num_conexiones INTEGER,"
+            "num_usuarios INTEGER"
+            ");")
+
+# Commit para asegurar que los cambios en la estructura de la base de datos se guarden
 con.commit()
 
+# Inserción de datos en las tablas
 for elem in dataUsers["usuarios"]:
     clave = list(elem.keys())[0]
     usuario_data = elem[clave]
@@ -84,16 +90,25 @@ for elem in dataUsers["usuarios"]:
         (clave, usuario_data['emails']['total'], usuario_data['emails']['phishing'], usuario_data['emails']['cliclados']))
 
     for fecha in usuario_data['fechas']:
-        cur.execute("INSERT OR IGNORE  INTO fechas_usuarios (usuario_id, fecha) VALUES ((SELECT id FROM usuarios WHERE nombre = ?),?)", (clave, fecha))
-
+        cur.execute(
+            "INSERT OR IGNORE INTO fechas_usuarios (usuario_id, fecha) VALUES ((SELECT id FROM usuarios WHERE nombre = ?), ?)",
+            (clave, fecha))
     for ip in usuario_data['ips']:
         cur.execute("INSERT OR IGNORE INTO ips_usuarios (usuario_id, ip) VALUES ((SELECT id FROM usuarios WHERE nombre = ?),?)", (clave, ip))
 
+# Commit para asegurar que los cambios se guarden en la base de datos
 con.commit()
 
-for elem in dataLegal["legal"]:
-    clave = list(elem.keys())[0]
-    cur.execute("INSERT OR IGNORE INTO legal(web, cookies, aviso, proteccion_de_datos, creacion) VALUES(?,?,?, ?,?) ",
-        (clave, elem[clave]['cookies'],elem[clave]['aviso'],elem[clave]['proteccion_de_datos'],elem[clave]['creacion']))
+# Inserción de datos en la tabla de conexiones_por_dia_usuario
+cur.execute("""
+    INSERT INTO conexiones_por_dia_usuario(fecha, num_conexiones, num_usuarios)
+    SELECT fecha, COUNT(*) AS num_conexiones, COUNT(DISTINCT usuario_id) AS num_usuarios
+    FROM fechas_usuarios
+    GROUP BY fecha
+""")
 
+# Commit para asegurar que los cambios se guarden en la base de datos
 con.commit()
+
+# Cierre de la conexión con la base de datos
+con.close()

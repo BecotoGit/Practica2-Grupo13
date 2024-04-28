@@ -1,6 +1,6 @@
 import sqlite3
 import requests
-from flask import Flask, render_template, request, make_response
+from flask import Flask, render_template, request, make_response, send_file
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
@@ -8,10 +8,14 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
 
+
 import ejercicio2
 from ejercicio3 import prepareDf
 
 app = Flask(__name__)
+SHODAN_API_KEY = '3QekBMbgE4GUpOZnBTzsc3cQYNvK2smd'
+
+
 def connect_db():
     return sqlite3.connect('datos.db')
 
@@ -173,6 +177,7 @@ def top_paginas_desactualizadas():
     con.close()
     return render_template('paginas_desactualizadas.html', paginas_desactualizadas=paginas_desactualizadas)
 
+
 @app.route('/top_paginas_desactualizadas_pdf')
 def top_paginas_desactualizadas_pdf():
     x = request.args.get('xWeb', default=5, type=int)
@@ -255,6 +260,8 @@ def ultimas_vulns_pdf():
     else:
         return 'Error al obtener los datos de CVE'
 
+
+
 def generate_cves_pdf(cves):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
@@ -265,14 +272,12 @@ def generate_cves_pdf(cves):
     content.append(Paragraph("Últimas Vulnerabilidades", styles['Title']))
     content.append(Paragraph("<br/><br/>", style_normal))
 
-    # Define el ancho de cada columna
-    column_widths = [1 * inch, 5 * inch]  # Ancho en pulgadas
+    column_widths = [1 * inch, 5 * inch]
 
     table_data = [["ID", "Descripción"]]
     for cve in cves:
         table_data.append([cve['id'], Paragraph(cve['summary'], style_normal)])
 
-    # Crea la tabla con los anchos de columna definidos
     t = Table(table_data, colWidths=column_widths)
     t.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -282,14 +287,74 @@ def generate_cves_pdf(cves):
                            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
                            ('GRID', (0, 0), (-1, -1), 1, colors.black),
                            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                           ('WORDWRAP', (1, 1), (-1, -1), True)]))  # Permitir el ajuste de texto en varias líneas en la columna de descripción
+                           ('WORDWRAP', (1, 1), (-1, -1), True)]))
 
+    content.append(t)
+    doc.build(content)
+    pdf_data = buffer.getvalue()
+    buffer.close()
+    return pdf_data
+
+
+@app.route('/conexiones_usuario')
+def conexiones_usuario():
+    con = connect_db()
+    cur = con.cursor()
+    cur.execute("""
+        SELECT fecha, COUNT(*) AS num_conexiones, GROUP_CONCAT(usuario_id) AS ids_usuarios
+        FROM fechas_usuarios
+        GROUP BY fecha
+        ORDER BY fecha
+    """)
+    conexiones_usuario = cur.fetchall()
+    con.close()
+    return render_template('conexiones_usuario.html', conexiones_usuario=conexiones_usuario)
+
+def generate_conexiones_usuario_pdf(data):
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    style_normal = styles['Normal']
+
+    content = []
+    content.append(Paragraph("Conexiones de Usuarios por Día", styles['Title']))
+    content.append(Paragraph("<br/><br/>", style_normal))
+
+    table_data = [["Fecha", "Número de Conexiones", "IDs de Usuarios"]]
+    for conexion in data:
+        table_data.append([conexion[0], conexion[1], conexion[2]])
+
+    t = Table(table_data)
+    t.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                           ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                           ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                           ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                           ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                           ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                           ('GRID', (0, 0), (-1, -1), 1, colors.black)]))
     content.append(t)
 
     doc.build(content)
     pdf_data = buffer.getvalue()
     buffer.close()
     return pdf_data
+
+from flask import send_file
+
+@app.route('/conexiones_usuario_pdf')
+def conexiones_usuario_pdf():
+    con = connect_db()
+    cur = con.cursor()
+    cur.execute("""
+        SELECT fecha, COUNT(*) AS num_conexiones, GROUP_CONCAT(usuario_id) AS ids_usuarios
+        FROM fechas_usuarios
+        GROUP BY fecha
+        ORDER BY fecha
+    """)
+    conexiones_usuario = cur.fetchall()
+    con.close()
+    pdf_data = generate_conexiones_usuario_pdf(conexiones_usuario)
+    return send_pdf(pdf_data, 'conexiones_usuario.pdf')
 
 
 
