@@ -1,4 +1,6 @@
 import sqlite3
+
+import numpy as np
 import requests
 from flask import Flask, render_template, request, make_response, send_file
 from reportlab.lib import colors
@@ -7,10 +9,8 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
-from DecisionTreeClassifier import perform_decision_tree, visualize_decision_tree
-from LinearRegression import perform_linear_regression
-from RandomForest import perform_random_forest
-
+from joblib import load
+from joblib import dump
 
 
 app = Flask(__name__)
@@ -26,49 +26,58 @@ def index():
 
 @app.route('/analizar_usuario', methods=['GET', 'POST'])
 def analizar_usuario():
-    name = request.form['name']
-    phone = request.form['phone']
-    province = request.form['province']
-    permissions = request.form['permissions']
-    total_sent_emails = request.form['total_sent_emails']
-    total_phishing_emails = request.form['total_phishing_emails']
-    total_clicked_emails = request.form['total_clicked_emails']
+    nombre = request.form['nombre']
+    telefono = request.form['telefono']
+    provincia = request.form['provincia']
+    permisos = request.form['permisos']
+    total = request.form['total']
+    phishing = request.form['phishing']
+    cliclados = request.form['cliclados']
     method = request.form['method']
 
-    user_data = (name, phone, province, permissions, total_sent_emails, total_phishing_emails, total_clicked_emails)
+    total = float(total)
+    phishing = float(phishing)
+    cliclados = float(cliclados)
 
-    usuario = {'nombre': name, 'telefono': phone, 'provincia': province, 'permisos': permissions, 'total_enviados': total_sent_emails, 'total_phishing': total_phishing_emails, 'total_clickeados': total_clicked_emails}
+    porcentaje_phishing_cliclados = (phishing / cliclados) * 100
+    critico = 1 if porcentaje_phishing_cliclados > 50 else 0
+    usuario = {'nombre': nombre, 'telefono': telefono, 'provincia': provincia, 'permisos': permisos, 'total': total,
+               'phishing': phishing, 'cliclados': cliclados, 'critico': critico}
 
-    prediction = predict_user_criticity(user_data, method)
+
+    prediction = predict_user_criticity(nombre, total, phishing, cliclados, method)
 
     return render_template('resultado_analisis.html', usuario=usuario, prediction=prediction)
 
-
-def predict_user_criticity(user_data, method):
-    con = connect_db()
+def predict_user_criticity(nombre, total, phishing, cliclados, method):
+    con = sqlite3.connect('datos.db')
     cur = con.cursor()
 
-    # Consultar los datos del usuario en la base de datos
     cur.execute("""
-            SELECT nombre, telefono, provincia, permisos, total, phishing, cliclados
-            FROM usuarios
-            JOIN emails ON usuarios.nombre = emails.usuario
-            WHERE usuarios.nombre = ?
-        """, (user_data[0],))
-    user_data = cur.fetchone()
+                SELECT nombre, telefono, provincia, permisos, total, phishing, cliclados
+                FROM usuarios
+                JOIN emails ON usuarios.nombre = emails.usuario
+                WHERE usuarios.nombre = ?
+            """, (nombre,))
+    row = cur.fetchone()
+    prediction = None
+    if row:
+        _, _, _, permisos_db, total_db, phishing_db, cliclados_db = row
+        porcentaje_phishing_cliclados = (phishing_db / cliclados_db) * 100
+        user_data = [[phishing_db, cliclados_db, total_db, permisos_db]]
 
-    if method == 'Regresión Lineal':
-        prediction = perform_linear_regression()
-    elif method == 'Árbol de Decisión':
-        prediction = perform_decision_tree()
-    elif method == 'Bosque Aleatorio':
-        prediction = perform_random_forest()
+        if method == 'Regresión Lineal':
+            regr = load('linear_regression_model.joblib')
+            prediction = regr.predict(user_data)
+        elif method == 'Árbol de Decisión':
+            clf_model = load('decision_tree_model.joblib')
+            prediction = clf_model.predict(user_data)
+        elif method == 'Bosque Aleatorio':
+            clf = load('random_forest_model.joblib')
+            prediction = clf.predict(user_data)
 
     con.close()
-
-
-
-
+    return prediction
 @app.route('/top_usuarios_criticos')
 def top_usuarios_criticos():
     x = request.args.get('x', default=5, type=int)

@@ -16,12 +16,26 @@
     <p><strong>Total de Emails Enviados:</strong> {{ usuario.total }}</p>
     <p><strong>Total de Emails con Phishing:</strong> {{ usuario.phishing }}</p>
     <p><strong>Total de Emails Clicados:</strong> {{ usuario.cliclados }}</p>
-    <h2>Visualización del Bosque Aleatorio:</h2>
-    {% for i in range(n_trees) %}
-        <img src="{{ url_for('static', filename='tree_' + str(i) + '.png') }}" alt="Tree {{ i }}">
-    {% endfor %}
+
+    {% if method == 'Bosque Aleatorio' %}
+        <h2>Visualización del Bosque Aleatorio:</h2>
+        {% for i in range(n_trees) %}
+            <img src="{{ url_for('static', filename='tree_' + str(i) + '.png') }}" alt="Tree {{ i }}">
+        {% endfor %}
+    {% endif %}
+
+    {% if method == 'Regresión Lineal' %}
+        <h2>Visualización de Regresión Lineal:</h2>
+        <img src="{{ url_for('static', filename='linear_regression_plot.png') }}" alt="Linear Regression Plot">
+    {% endif %}
+
+    {% if method == 'Árbol de Decisión' %}
+        <h2>Visualización del Árbol de Decisión:</h2>
+        <img src="{{ url_for('static', filename='test.gv.png') }}" alt="Decision Tree Plot">
+    {% endif %}
+
     <h2>Resultado del Análisis:</h2>
-    {% if es_critico %}
+    {% if prediction == 1 %}
         <p>¡Este usuario es crítico!</p>
     {% else %}
         <p>Este usuario no es crítico.</p>
