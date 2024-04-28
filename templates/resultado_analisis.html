@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultado del Análisis</title>
+</head>
+<body>
+    <h1>Resultado del Análisis</h1>
+    <h2>Usuario Analizado:</h2>
+    <p><strong>Nombre:</strong> {{ usuario.nombre }}</p>
+    <p><strong>Teléfono:</strong> {{ usuario.telefono }}</p>
+    <p><strong>Provincia:</strong> {{ usuario.provincia }}</p>
+    <p><strong>Permisos:</strong> {{ usuario.permisos }}</p>
+    <p><strong>Total de Emails Enviados:</strong> {{ usuario.total_emails_enviados }}</p>
+    <p><strong>Total de Emails con Phishing:</strong> {{ usuario.total_emails_phishing }}</p>
+    <p><strong>Total de Emails Clicados:</strong> {{ usuario.total_emails_clicados }}</p>
+
+    <h2>Resultado del Análisis:</h2>
+    {% if es_critico %}
+        <p>¡Este usuario es crítico!</p>
+    {% else %}
+        <p>Este usuario no es crítico.</p>
+    {% endif %}
+</body>
+</html>

@@ -8,8 +8,6 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
 
-import ejercicio2
-from ejercicio3 import prepareDf
 
 app = Flask(__name__)
 def connect_db():
@@ -20,54 +18,39 @@ def connect_db():
 def index():
     return render_template('index.html')
 
-@app.route('/graph')
-def graph():
-    return render_template('grafico.html')
+@app.route('/analizar_usuario')
+def analizar_usuario():
+    # Obtener datos del formulario
+    name = request.form['name']
+    phone = request.form['phone']
+    province = request.form['province']
+    permissions = request.form['permissions']
+    total_sent_emails = request.form['total_sent_emails']
+    total_phishing_emails = request.form['total_phishing_emails']
+    total_clicked_emails = request.form['total_clicked_emails']
+    method = request.form['method']
 
-@app.route('/model')
-def model():
-    return render_template('model.html')
+    # Preparar datos del usuario nuevo
+    user_data = (name, phone, province, permissions, total_sent_emails, total_phishing_emails, total_clicked_emails)
 
-@app.route('/topUsers')
-def users():
-    return
+    # Utilizar el método de IA seleccionado para predecir si el usuario es crítico o no
+    prediction = predict_user_criticity(user_data, method)
 
-@app.route('/topWebs')
-def web():
-    return
-@app.route('/ej2')
-def ej2():
-    usuarios_df, emails_df, legal_df, admin_phishing_df = ejercicio2.obtener_datos()
+    # Mostrar resultado en la interfaz de usuario
+    return render_template('resultado_analisis.html', prediction=prediction)
 
-    n_muestras = ejercicio2.num_muestras(usuarios_df)
-    media_fechas, desviacion_fechas = ejercicio2.mean_std_fechas(usuarios_df)
-    media_ips, desviacion_ips = ejercicio2.mean_std_ips(usuarios_df)
-    media, desviacion_estandar = ejercicio2.mean_std_phishing(emails_df)
-    minimo, maximo = ejercicio2.min_max_emails(emails_df)
-    minimo_admin, maximo_admin = ejercicio2.min_max_phishing_admin(admin_phishing_df)
-    return render_template('ej2.html', num_muestras=n_muestras, media_fechas=media_fechas,
-                           desviacion_fechas=desviacion_fechas, media_ips=media_ips, desviacion_ips=desviacion_ips,
-                           media=media, desviacion_estandar=desviacion_estandar, minimo=minimo, maximo=maximo,
-                           minimo_admin=minimo_admin, maximo_admin=maximo_admin)
+def predict_user_criticity(user_data, method):
+    con = sqlite3.connect('datos.db')
+    cur = con.cursor()
+    if method == 'Regresión Lineal':
+        prediction = predict_using_linear_regression(user_data)
+    elif method == 'Árbol de Decisión':
+        prediction = predict_using_decision_tree(user_data)
+    elif method == 'Bosque Aleatorio':
+        prediction = predict_using_random_forest(user_data)
+    con.close()
 
-@app.route('/ej3')
-def ej3():
-    df = prepareDf()
-
-    data = {"grupo": list(), "num_muestras": list(), "missing": list(), "median": list(), "mean": list(),
-            "var": list(), "min": list(), "max": list()}
-    for grupo, data_group in df.groupby(['permisos', 'contrasenaDebil']):
-        data['grupo'].append(grupo)
-        data['num_muestras'].append(len(data_group['phishing']))
-        data['missing'].append((data_group['phishing'] == 0).sum())
-        data['median'].append(data_group['phishing'].median())
-        data['mean'].append(data_group['phishing'].mean())
-        data['var'].append(data_group['phishing'].var())
-        data['min'].append(data_group['phishing'].min())
-        data['max'].append(data_group['phishing'].max())
-
-    return render_template('prueba.html', data=data)
-
+    return prediction
 
 @app.route('/top_usuarios_criticos')
 def top_usuarios_criticos():
