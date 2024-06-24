@@ -1,6 +1,7 @@
 import sqlite3
 import threading
 
+import aiohttp
 import numpy as np
 import pandas as pd
 import requests
@@ -443,9 +444,9 @@ def predict():
 
 
 if __name__ == '__main__':
+    app.run(debug = True)
     ## Hilo para cargar la página 'https://cve.circl.lu/api/last/10' de manera asíncrona
     thread = threading.Thread(target=run_asyncio_task())
     thread.start()
 
-    app.run(debug = True)
     thread.join()
