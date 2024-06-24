@@ -207,44 +207,13 @@ def send_pdf(pdf_data, filename):
     response.headers['Content-Type'] = 'application/pdf'
     return response
 
-## Funciones para cargar ultimas cves en asíncrono ##
-async def fetch_data(session, url):
-    global data_vulns
-    try:
-        async with session.get(url) as response:
-            if response.headers['Content-Type'] == 'application/json':
-                data_vulns = await response.json()
-            else:
-                # Manejar el caso donde el contenido no es JSON
-                print(f"Error: Content-Type is {response.headers['Content-Type']}")
-                print(f"Content: {await response.text()}")
-    except Exception as e:
-        print(f"Error fetching data: {e}")
-
-async def start_background_task():
-    async with aiohttp.ClientSession() as session:
-        url = 'https://cve.circl.lu/api/last/10'
-        await fetch_data(session, url)
-
-def run_asyncio_task():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(start_background_task())
-## Fin funciones para cargar ultimas cves en asíncrono ##
-
 
 @app.route('/ultimas_vulns')
 def ultimas_vulns():
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 12871.102.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.141 Safari/537.36"}
-    response = requests.get('https://cve.circl.lu/api/last/10', headers=headers)
-
-    """if response.status_code == 200:
+    response = requests.get('https://cve.circl.lu/api/last/10')
+    if response.status_code == 200:
         cves = response.json()
         return render_template('ultimas_vulns.html', cves=cves)
-    """
-    if data_vulns:
-        return render_template('ultimas_vulns.html', cves=data_vulns)
     else:
         return 'Error al obtener los datos de CVE'
 
@@ -445,8 +414,4 @@ def predict():
 
 if __name__ == '__main__':
     app.run(debug = True)
-    ## Hilo para cargar la página 'https://cve.circl.lu/api/last/10' de manera asíncrona
-    thread = threading.Thread(target=run_asyncio_task())
-    thread.start()
 
-    thread.join()
