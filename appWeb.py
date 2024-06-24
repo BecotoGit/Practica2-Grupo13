@@ -209,25 +209,24 @@ def send_pdf(pdf_data, filename):
 
 
 @app.route('/ultimas_vulns')
-async def ultimas_vulns():
-    async with aiohttp.ClientSession() as session:
-        async with session.get('https://cve.circl.lu/api/last/10') as response:
-            if response.status == 200:
-                cves = await response.json()
-                return render_template('ultimas_vulns.html', cves=cves)
-            else:
-                return 'Error al obtener los datos de CVE'
+def ultimas_vulns():
+    response = requests.get('https://cve.circl.lu/api/last/10')
+    if response.status_code == 200:
+        cves = response.json()
+        return render_template('ultimas_vulns.html', cves=cves)
+    else:
+        return 'Error al obtener los datos de CVE'
+
 
 @app.route('/ultimas_vulns_pdf')
-async def ultimas_vulns_pdf():
-    async with aiohttp.ClientSession() as session:
-        async with session.get('https://cve.circl.lu/api/last/10') as response:
-            if response.status == 200:
-                cves = await response.json()
-                pdf_data = generate_cves_pdf(cves)
-                return send_pdf(pdf_data, 'ultimas_vulns.pdf')
-            else:
-                return 'Error al obtener los datos de CVE'
+def ultimas_vulns_pdf():
+    response = requests.get('https://cve.circl.lu/api/last/10')
+    if response.status_code == 200:
+        cves = response.json()
+        pdf_data = generate_cves_pdf(cves)
+        return send_pdf(pdf_data, 'ultimas_vulns.pdf')
+    else:
+        return 'Error al obtener los datos de CVE'
 
 def generate_cves_pdf(cves):
     buffer = BytesIO()
