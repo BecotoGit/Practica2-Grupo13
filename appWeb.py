@@ -1,7 +1,10 @@
 import sqlite3
+import threading
 
 import numpy as np
 import requests
+import asyncio
+import aiohttp
 from flask import Flask, render_template, request, make_response, send_file
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -14,7 +17,7 @@ from joblib import dump
 
 
 app = Flask(__name__)
-
+data_vulns = None
 
 def connect_db():
     return sqlite3.connect('datos.db')
@@ -253,13 +256,44 @@ def send_pdf(pdf_data, filename):
     response.headers['Content-Type'] = 'application/pdf'
     return response
 
+## Funciones para cargar ultimas cves en asíncrono ##
+async def fetch_data(session, url):
+    global data_vulns
+    try:
+        async with session.get(url) as response:
+            if response.headers['Content-Type'] == 'application/json':
+                data_vulns = await response.json()
+            else:
+                # Manejar el caso donde el contenido no es JSON
+                print(f"Error: Content-Type is {response.headers['Content-Type']}")
+                print(f"Content: {await response.text()}")
+    except Exception as e:
+        print(f"Error fetching data: {e}")
+
+async def start_background_task():
+    async with aiohttp.ClientSession() as session:
+        url = 'https://cve.circl.lu/api/last/10'
+        await fetch_data(session, url)
+
+def run_asyncio_task():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(start_background_task())
+## Fin funciones para cargar ultimas cves en asíncrono ##
+
 
 @app.route('/ultimas_vulns')
 def ultimas_vulns():
-    response = requests.get('https://cve.circl.lu/api/last/10')
-    if response.status_code == 200:
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 12871.102.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.141 Safari/537.36"}
+    response = requests.get('https://cve.circl.lu/api/last/10', headers=headers)
+
+    """if response.status_code == 200:
         cves = response.json()
         return render_template('ultimas_vulns.html', cves=cves)
+    """
+    if data_vulns:
+        return render_template('ultimas_vulns.html', cves=data_vulns)
     else:
         return 'Error al obtener los datos de CVE'
 
@@ -374,4 +408,9 @@ def conexiones_usuario_pdf():
 
 
 if __name__ == '__main__':
+    ## Hilo para cargar la página 'https://cve.circl.lu/api/last/10' de manera asíncrona
+    thread = threading.Thread(target=run_asyncio_task())
+    thread.start()
+
     app.run(debug = True)
+    thread.join()
