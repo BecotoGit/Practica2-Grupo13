@@ -1,8 +1,9 @@
 import sqlite3
 
 import numpy as np
+import pandas as pd
 import requests
-from flask import Flask, render_template, request, make_response, send_file
+from flask import Flask, json, render_template, request, make_response, send_file
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
@@ -11,6 +12,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from io import BytesIO
 from joblib import load
 from joblib import dump
+from sklearn.calibration import LabelEncoder
+from Modelos import Linear_Regresion, Regresion_Predict, Arbol_Decision, Arbol_Decision_Predict, forest, Forest_Predict
 
 
 app = Flask(__name__)
@@ -24,60 +27,7 @@ def connect_db():
 def index():
     return render_template('index.html')
 
-@app.route('/analizar_usuario', methods=['GET', 'POST'])
-def analizar_usuario():
-    nombre = request.form['nombre']
-    telefono = request.form['telefono']
-    provincia = request.form['provincia']
-    permisos = request.form['permisos']
-    total = request.form['total']
-    phishing = request.form['phishing']
-    cliclados = request.form['cliclados']
-    method = request.form['method']
 
-    total = float(total)
-    phishing = float(phishing)
-    cliclados = float(cliclados)
-
-    porcentaje_phishing_cliclados = (phishing / cliclados) * 100
-    critico = 1 if porcentaje_phishing_cliclados > 50 else 0
-    usuario = {'nombre': nombre, 'telefono': telefono, 'provincia': provincia, 'permisos': permisos, 'total': total,
-               'phishing': phishing, 'cliclados': cliclados, 'critico': critico}
-
-
-    prediction = predict_user_criticity(nombre, total, phishing, cliclados, method)
-
-    return render_template('resultado_analisis.html', usuario=usuario, prediction=prediction)
-
-def predict_user_criticity(nombre, total, phishing, cliclados, method):
-    con = sqlite3.connect('datos.db')
-    cur = con.cursor()
-
-    cur.execute("""
-                SELECT nombre, telefono, provincia, permisos, total, phishing, cliclados
-                FROM usuarios
-                JOIN emails ON usuarios.nombre = emails.usuario
-                WHERE usuarios.nombre = ?
-            """, (nombre,))
-    row = cur.fetchone()
-    prediction = None
-    if row:
-        _, _, _, permisos_db, total_db, phishing_db, cliclados_db = row
-        porcentaje_phishing_cliclados = (phishing_db / cliclados_db) * 100
-        user_data = [[phishing_db, cliclados_db, total_db, permisos_db]]
-
-        if method == 'Regresión Lineal':
-            regr = load('linear_regression_model.joblib')
-            prediction = regr.predict(user_data)
-        elif method == 'Árbol de Decisión':
-            clf_model = load('decision_tree_model.joblib')
-            prediction = clf_model.predict(user_data)
-        elif method == 'Bosque Aleatorio':
-            clf = load('random_forest_model.joblib')
-            prediction = clf.predict(user_data)
-
-    con.close()
-    return prediction
 @app.route('/top_usuarios_criticos')
 def top_usuarios_criticos():
     x = request.args.get('x', default=5, type=int)
@@ -371,6 +321,91 @@ def conexiones_usuario_pdf():
     con.close()
     pdf_data = generate_conexiones_usuario_pdf(conexiones_usuario)
     return send_pdf(pdf_data, 'conexiones_usuario.pdf')
+
+@app.route('/analizar_usuario', methods=['GET', 'POST'])
+def predict():
+    if request.method == 'GET':
+        return render_template('formulario_ejercicio5.html')
+    else:
+        # Conectar con la base de datos SQLite
+        conn = sqlite3.connect('datos.db')
+
+        # Leer los datos relevantes de la base de datos
+        df = pd.read_sql_query('''
+            SELECT u.nombre, u.telefono, u.provincia, u.permisos, e.total, e.phishing, e.cliclados
+            FROM usuarios u
+            INNER JOIN emails e ON u.nombre = e.usuario
+            ''', conn)
+
+        for indice_fila, fila in df.iterrows():
+            for columna in df.columns:
+                # Verificar si el valor en la celda es 'None'
+                if fila[columna] == 'None':
+                    # Cambiar 'None' a None
+                    df.at[indice_fila, columna] = None
+
+        df_sin_none = df.dropna()
+
+        # Copia del dataframe sin valores nulos
+        df_sin_none_copy = df_sin_none.copy()
+
+        # Inicializar el codificador de etiquetas
+        label_encoder = LabelEncoder()
+
+        # Ajustar y transformar la columna 'provincia' usando el codificador de etiquetas
+        df_sin_none_copy['provincia'] = label_encoder.fit_transform(df_sin_none_copy['provincia'])
+
+        # Mapeo de las etiquetas a las categorías originales
+        mappings = {index: label for index, label in enumerate(label_encoder.classes_)}
+
+        # Cargar el archivo users_data_online_clasificado.json
+        with open('users_data_online_clasificado.json') as f:
+            data_json = json.load(f)
+
+        # Convertir el JSON en un DataFrame
+        df_json = pd.DataFrame(data_json)
+
+        # Lista para almacenar los valores de 'criticos'
+        criticos_lista = []
+        for fila_json in df_json['usuarios']:
+            for nombre_usuario, datos_usuario in fila_json.items():
+                if nombre_usuario in df_sin_none['nombre'].values:
+                    critico = datos_usuario.get('critico', None)
+                    criticos_lista.append(critico)
+
+        # Separar las características (X) y las etiquetas (y)
+        X = df_sin_none_copy.drop(columns=['nombre'])  # Características: todas las columnas excepto 'nombre'
+        y = criticos_lista  # Etiquetas: columna 'critico'
+
+        regr_model = Linear_Regresion(X, y)  
+        tree_model = Arbol_Decision(X, y)  
+        forest_model = forest(X, y) 
+
+        modelo = request.form['method']
+        nombre = request.form['nombre']
+        telefono = request.form['telefono']
+        provincia = request.form['provincia']
+        permisos = int(request.form['permisos'])
+        total = int(request.form['total'])
+        phishing = int(request.form['phishing'])
+        cliclados = int(request.form['cliclados'])
+
+        if nombre not in df_sin_none['nombre'].values:
+            return render_template('error.html', mensaje='Usuario no encontrado en la base de datos')
+
+        es_critico = None
+
+        if modelo == 'Regresión Lineal':
+            resultado = Regresion_Predict(regr_model, nombre, telefono, provincia, permisos, total, phishing, cliclados)
+            es_critico = resultado
+        elif modelo == 'Árbol de Decisión':
+            resultado = Arbol_Decision_Predict(tree_model, nombre, telefono, provincia, permisos, total, phishing, cliclados)
+            es_critico = resultado == 1
+        elif modelo == 'Bosque Aleatorio':
+            resultado = Forest_Predict(forest_model, nombre, telefono, provincia, permisos, total, phishing, cliclados)
+            es_critico = resultado == 1
+
+        return render_template('resultado_prediccion.html', es_critico=es_critico)
 
 
 if __name__ == '__main__':
