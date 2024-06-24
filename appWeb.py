@@ -209,57 +209,36 @@ def send_pdf(pdf_data, filename):
 
 
 @app.route('/ultimas_vulns')
-def ultimas_vulns():
-    response = requests.get('https://cve.circl.lu/api/last/10')
-    if response.status_code == 200:
-        cves = response.json()
-        return render_template('ultimas_vulns.html', cves=cves)
-    else:
-        return 'Error al obtener los datos de CVE'
-
+async def ultimas_vulns():
+    async with aiohttp.ClientSession() as session:
+        async with session.get('https://cve.circl.lu/api/last/10') as response:
+            if response.status == 200:
+                cves = await response.json()
+                return render_template('ultimas_vulns.html', cves=cves)
+            else:
+                return 'Error al obtener los datos de CVE'
 
 @app.route('/ultimas_vulns_pdf')
-def ultimas_vulns_pdf():
-    response = requests.get('https://cve.circl.lu/api/last/10')
-    if response.status_code == 200:
-        cves = response.json()
-        pdf_data = generate_cves_pdf(cves)
-        return send_pdf(pdf_data, 'ultimas_vulns.pdf')
-    else:
-        return 'Error al obtener los datos de CVE'
-
+async def ultimas_vulns_pdf():
+    async with aiohttp.ClientSession() as session:
+        async with session.get('https://cve.circl.lu/api/last/10') as response:
+            if response.status == 200:
+                cves = await response.json()
+                pdf_data = generate_cves_pdf(cves)
+                return send_pdf(pdf_data, 'ultimas_vulns.pdf')
+            else:
+                return 'Error al obtener los datos de CVE'
 
 def generate_cves_pdf(cves):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
     styles = getSampleStyleSheet()
-    style_normal = styles['Normal']
-
-    style_description = ParagraphStyle(name='Description', parent=style_normal, fontSize=8)
-
     content = []
-    content.append(Paragraph("Últimas Vulnerabilidades", styles['Title']))
-    content.append(Paragraph("<br/><br/>", style_normal))
 
-    column_widths = [1 * inch, 5 * inch]
-
-    table_data = [["ID", "Descripción"]]
+    content.append(Paragraph("Últimas Vulnerabilidades CVE", styles['Title']))
     for cve in cves:
-        description = Paragraph(cve['summary'], style_description)
-        table_data.append([cve['id'], description])
+        content.append(Paragraph(f"{cve['id']}: {cve['summary']}", styles['Normal']))
 
-    t = Table(table_data, colWidths=column_widths)
-    t.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                           ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                           ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                           ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                           ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                           ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                           ('GRID', (0, 0), (-1, -1), 1, colors.black),
-                           ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                           ('WORDWRAP', (1, 1), (-1, -1), True)]))
-
-    content.append(t)
     doc.build(content)
     pdf_data = buffer.getvalue()
     buffer.close()
