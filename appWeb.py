@@ -127,6 +127,7 @@ def top_usuarios_criticos_pdf():
     return send_pdf(pdf_data, 'usuarios_criticos.pdf')
 
 
+@app.route('/top_paginas_desactualizadas_pdf')
 @app.route('/top_paginas_desactualizadas')
 def top_paginas_desactualizadas():
     x = request.args.get('xWeb', default=5, type=int)
@@ -138,7 +139,6 @@ def top_paginas_desactualizadas():
     return render_template('paginas_desactualizadas.html', paginas_desactualizadas=paginas_desactualizadas)
 
 
-@app.route('/top_paginas_desactualizadas_pdf')
 def top_paginas_desactualizadas_pdf():
     x = request.args.get('xWeb', default=5, type=int)
     con = connect_db()
@@ -227,6 +227,7 @@ def ultimas_vulns_pdf():
         return send_pdf(pdf_data, 'ultimas_vulns.pdf')
     else:
         return 'Error al obtener los datos de CVE'
+
 
 def generate_cves_pdf(cves):
     buffer = BytesIO()
