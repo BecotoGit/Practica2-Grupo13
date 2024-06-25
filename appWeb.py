@@ -143,9 +143,7 @@ def top_paginas_desactualizadas_pdf():
     x = request.args.get('xWeb', default=5, type=int)
     con = connect_db()
     cur = con.cursor()
-    cur.execute(
-        "SELECT web FROM legal WHERE cookies > 0 OR aviso > 0 OR proteccion_de_datos > 0 ORDER BY (cookies + aviso + proteccion_de_datos), creacion LIMIT ?",
-        (x,))
+    cur.execute("SELECT web FROM legal WHERE cookies > 0 OR aviso > 0 OR proteccion_de_datos > 0 ORDER BY (cookies + aviso + proteccion_de_datos), creacion LIMIT ?", (x,))
     paginas_desactualizadas = cur.fetchall()
     con.close()
     pdf_data = generate_paginas_pdf(paginas_desactualizadas)
