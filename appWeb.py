@@ -235,12 +235,31 @@ def generate_cves_pdf(cves):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
     styles = getSampleStyleSheet()
+    style_normal = styles['Normal']
     content = []
 
     content.append(Paragraph("Últimas Vulnerabilidades CVE", styles['Title']))
-    for cve in cves:
-        content.append(Paragraph(f"{cve['id']}: {cve['summary']}", styles['Normal']))
+    content.append(Paragraph("<br/><br/>", style_normal))
 
+    column_widths = [1 * inch, 5 * inch]
+    table_data = [["ID", "Descripción"]]
+    for cve in cves:
+        table_data.append([cve["id"], Paragraph(cve['summary'], style_normal)])
+
+    t = Table(table_data, colWidths=column_widths)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('WORDWRAP', (0, 1), (-1, -1), True),
+    ]))
+
+    content.append(t)
     doc.build(content)
     pdf_data = buffer.getvalue()
     buffer.close()
